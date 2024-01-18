@@ -131,26 +131,27 @@ func TestTransaction(t *testing.T) {
 		return err
 	}
 
-	//printRows := func() {
-	//	err = players.Query(func(tx *column.Txn) error {
-	//		names := tx.String("name")
-	//		var i int = 0
-	//		err = tx.WithInt("age", func(v int64) bool {
-	//			return true
-	//		}).Range(func(idx uint32) {
-	//			name, _ := names.Get()
-	//			fmt.Println("names: " + name + strconv.Itoa(i))
-	//			i++
-	//		})
-	//		if err != nil {
-	//			return err
-	//		}
-	//		return nil
-	//	})
-	//}
+	printRows := func() error {
+		err := players.Query(func(tx *column.Txn) error {
+			names := tx.String("name")
+			var i int = 0
+			err := tx.WithInt("age", func(v int64) bool {
+				return true
+			}).Range(func(idx uint32) {
+				name, _ := names.Get()
+				fmt.Println("names: " + name + strconv.Itoa(i))
+				i++
+			})
+			if err != nil {
+				return err
+			}
+			return nil
+		})
+		return err
+	}
 
 	err = addPlayersError()
-	//printRows() //prints correctly even though count is 40. Uncomment to see.
+	_ = printRows()                      //prints correctly even though count is 40. Uncomment to see.
 	assert.Error(t, err)                 //should be error.
 	assert.Equal(t, players.Count(), 20) //transaction failed should still be 20.
 }
