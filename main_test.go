@@ -18,35 +18,47 @@ func TestTransaction(t *testing.T) {
 	if err != nil {
 		log.Fatalf("failed to create columns")
 	}
+	addPlayers := func() {
+		err = players.Query(func(tx *column.Txn) error {
+			for i := 0; i < 20; i++ {
+				_, err := tx.Insert(func(r column.Row) error {
+					r.SetString("name", "merlin")
+					r.SetString("class", "mage")
+					r.SetFloat64("balance", 99.95)
+					r.SetInt16("age", 107)
+					return nil
+				})
+				if err != nil {
+					return err
+				}
+			}
+			return nil
+		})
+	}
 
-	err = players.Query(func(tx *column.Txn) error {
-		for i := 0; i < 20; i++ {
-			tx.Insert(func(r column.Row) error {
-				r.SetString("name", "merlin")
-				r.SetString("class", "mage")
-				r.SetFloat64("balance", 99.95)
-				r.SetInt16("age", 107)
-				return nil
-			})
-		}
-		return nil
-	})
+	addPlayers()
 	assert.Nil(t, err)
 	assert.Equal(t, players.Count(), 20)
 
-	err = players.Query(func(tx *column.Txn) error {
-		for i := 0; i < 20; i++ {
-			tx.Insert(func(r column.Row) error {
-				r.SetString("name", "merlin")
-				r.SetString("class", "mage")
-				r.SetFloat64("balance", 99.95)
-				r.SetInt16("age", 107)
-				return nil
-			})
-		}
-		return errors.New("SHOULD NOT PASS")
-	})
+	addPlayersError := func() {
+		err = players.Query(func(tx *column.Txn) error {
+			for i := 0; i < 20; i++ {
+				_, err = tx.Insert(func(r column.Row) error {
+					r.SetString("name", "merlin")
+					r.SetString("class", "mage")
+					r.SetFloat64("balance", 99.95)
+					r.SetInt16("age", 107)
+					return nil
+				})
+				if err != nil {
+					return err
+				}
+			}
+			return errors.New("SHOULD NOT PASS")
+		})
+	}
 
+	addPlayersError()
 	assert.Error(t, err)                 //should be error.
 	assert.Equal(t, players.Count(), 20) //transaction failed should still be 20.
 }
