@@ -40,12 +40,50 @@ func TestTransactionInTransaction(t *testing.T) {
 	}
 
 	addPlayers := func() {
-		err = players.Query(func(tx *column.Txn) error {
+		err = players.Query(func(tx1 *column.Txn) error {
+			_, err := tx1.Insert(func(r column.Row) error {
+				r.SetString("name", "merlin")
+				r.SetString("class", "mage")
+				r.SetFloat64("balance", 99.95)
+				r.SetInt16("age", 107)
+				return nil
+			})
+			if err != nil {
+				return err
+			}
+			fmt.Println("count: " + strconv.Itoa(players.Count()))
+
+			names := tx1.String("name")
+			var i int = 0
+			err = tx1.WithInt("age", func(v int64) bool {
+				return true
+			}).Range(func(idx uint32) {
+				name, _ := names.Get()
+				fmt.Println("names outside: " + name + strconv.Itoa(i))
+				i++
+			})
+			if err != nil {
+				return err
+			}
 
 			//inner tx
-			err = players.Query(func(tx *column.Txn) error {
+			err = players.Query(func(tx2 *column.Txn) error {
+
+				names := tx2.String("name")
+				var i int = 0
+				err := tx2.WithInt("age", func(v int64) bool {
+					return true
+				}).Range(func(idx uint32) {
+					name, _ := names.Get()
+					fmt.Println("names inside: " + name + strconv.Itoa(i))
+					i++
+				})
+				if err != nil {
+					return err
+				}
+
 				for i := 0; i < 20; i++ {
-					_, err := tx.Insert(func(r column.Row) error {
+					_, err := tx2.Insert(func(r column.Row) error {
 						r.SetString("name", "merlin")
 						r.SetString("class", "mage")
 						r.SetFloat64("balance", 99.95)
@@ -60,7 +98,7 @@ func TestTransactionInTransaction(t *testing.T) {
 			})
 
 			for i := 0; i < 20; i++ {
-				_, err := tx.Insert(func(r column.Row) error {
+				_, err := tx1.Insert(func(r column.Row) error {
 					r.SetString("name", "merlin")
 					r.SetString("class", "mage")
 					r.SetFloat64("balance", 99.95)
@@ -92,6 +130,7 @@ func TestTransaction(t *testing.T) {
 	}
 	addPlayers := func() {
 		err = players.Query(func(tx *column.Txn) error {
+
 			for i := 0; i < 20; i++ {
 				_, err := tx.Insert(func(r column.Row) error {
 					r.SetString("name", "merlin")
