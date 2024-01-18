@@ -77,6 +77,7 @@ func TestTransactionInTransaction(t *testing.T) {
 
 	addPlayers()
 	printRows()
+	assert.Equal(t, players.Count(), 20)
 
 }
 
